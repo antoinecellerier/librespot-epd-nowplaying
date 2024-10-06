@@ -48,10 +48,12 @@ def open_epd():
     return epd
 
 def clear_screen():
+    print("Clear screen")
     epd = open_epd()
     epd.clear()
 
 def draw_now_playing():
+    print(f"Draw now playing {track_name}")
     epd = open_epd()
 
     horizontal = False
@@ -87,6 +89,7 @@ def draw_now_playing():
 
     draw = ImageDraw.Draw(image)
     # setting draw.font doesn't seem to effect the font used when using draw(..., font_size)
+    # draw.fontmode = "1" # disable anti aliasing
 
     x = 0
     y = 10
@@ -94,26 +97,32 @@ def draw_now_playing():
     def get_font(size):
         return ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", size)
 
-    def t(text, color, font_size, stroke=True):
+    def t(text, color, font_size, stroke=False):
         nonlocal x, y
         #print(f"printing {text}")
         font = get_font(font_size)
         tl = draw.textlength(text, font=font)
         if tl > width:
-            # reduce font size within 50-100% range to fit on screen width
-            font = get_font(max(font_size*width//tl, font_size//2)) 
+            # try to strip " - 2015 Remaster" or " (2015 Remaster)" suffixes
+            text = text.split(" - ")[0].split(" (")[0]
+            tl = draw.textlength(text, font=font)
+            if tl > width:
+                # reduce font size within 50-100% range to fit on screen width
+                font = get_font(max(font_size*width//tl, font_size//2))
+                tl = draw.textlength(text, font=font)
+        x_offset = max((width-tl)//2, 0)
         if stroke:
-            sw = 4 #font_size//6
-            draw.text((x+sw, y), text, stroke_width=sw, stroke_fill=color, fill="white", font=font)
+            #sw = 4 #font_size//6
+            draw.text((x+x_offset, y), text, stroke_width=sw, stroke_fill=color, fill="white", font=font)
         else:
-            draw.text((x, y), text, fill=color, font=font)
+            draw.text((x+x_offset, y), text, fill=color, font=font)
         y += font_size*3//2
 
-    t(track_name, "red", 30)
+    t(track_name, "red", 40)
     t(album, "black", 30)
     t(", ".join(track_artists), "black", 30)
     t("", "black", 10)
-    t(f"{duration.seconds//60}:{duration.seconds%60:02d}", "black", 20, False)
+    t(f"{duration.seconds//60}:{duration.seconds%60:02d}", "black", 30, False)
 
     if not horizontal:
         image.rotate(90)
