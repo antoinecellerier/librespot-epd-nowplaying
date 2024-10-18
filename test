@@ -1,0 +1,3 @@
+#!/bin/sh
+
+PLAYER_EVENT=track_changed ITEM_TYPE=Track NAME=Name DURATION_MS=123456 IS_EXPLICIT=false LANGUAGE=en COVERS=https://raw.githubusercontent.com/Abdurrahman-Subh/mdx-blog/main/images/color-wheel.jpg NUMBER=3 DISC_NUMBER=1 POPULARITY=12 ALBUM=Album ARTISTS=Artist ALBUM_ARTISTS=Album_artist python nowplaying.py

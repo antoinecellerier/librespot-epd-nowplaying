@@ -39,11 +39,10 @@ publish_time = ""
 description = ""
 
 def open_epd():
-    epd = displayfactory.load_display_driver("waveshare_epd.epd7in5b")
+    epd = displayfactory.load_display_driver("waveshare_epd.epd7in3e")
 
     epd.prepare()
-    epd.mode = 'red'
-    epd.palette_filter=[[255,255,255], [0,0,0], [255,0,0]]
+    epd.mode = 'color'
 
     return epd
 
@@ -76,11 +75,6 @@ def draw_now_playing():
     else:
         coversize = width-2*margin
     cover = cover.resize((coversize, coversize))
-    # Explicit quantization with LIBIMAGEQUANT seems to look better than the
-    # EPD default.
-    ip=Image.new('P', (10,10))
-    ip.putpalette([0, 0, 0, 255, 255, 255, 255, 0, 0])
-    cover = cover.quantize(colors=3, method=Image.Quantize.LIBIMAGEQUANT, palette=ip)
 
     if horizontal:
         image.paste(cover, (width-coversize-margin, (height-cover.height)//2))
@@ -118,11 +112,11 @@ def draw_now_playing():
             draw.text((x+x_offset, y), text, fill=color, font=font)
         y += font_size*3//2
 
-    t(track_name, "red", 40)
-    t(album, "black", 30)
+    t(track_name, "blue", 40)
+    t(album, "blue", 30)
     t(", ".join(track_artists), "black", 30)
     t("", "black", 10)
-    t(f"{duration.seconds//60}:{duration.seconds%60:02d}", "black", 30, False)
+    t(f"{duration.seconds//60}:{duration.seconds%60:02d}", "green", 30, False)
 
     if not horizontal:
         image.rotate(90)
