@@ -99,12 +99,12 @@ def get_theme(cover_path):
     elif cr12 >= cr_aa_threshold:
         bg = p[1]
         fg = p[2]
-        fg2 = p[2]
+        fg2 = fg
     else:
         # likely incorrect if p[0] is near the mid point
         bg = (255-p[0][0], 255-p[0][1], 255-p[0][2])
         fg = p[0]
-        fg2 = p[1]
+        fg2 = fg
 
     #print(f"bg  {bg}")
     #print(f"fg  {fg}")
