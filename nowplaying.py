@@ -55,7 +55,8 @@ def clear_screen():
 def get_theme(cover_path):
     ct = ColorThief(cover_path)
     # This returns color_count +1 colors
-    p = ct.get_palette(color_count=2, quality=1)
+    # quality = 1 best quality but takes 10s+
+    p = ct.get_palette(color_count=2, quality=10)
     def luminance(color):
         # https://www.w3.org/TR/WCAG20/#relativeluminancedef
         def normalize(x):
@@ -112,7 +113,7 @@ def get_theme(cover_path):
     return bg, fg, fg2
 
 def draw_now_playing():
-    print(f"Draw now playing {track_name}")
+    #print(f"Draw now playing {track_name}")
     epd = open_epd()
 
     horizontal = False
@@ -125,10 +126,14 @@ def draw_now_playing():
 
 
     cover_path = "/tmp/cover.jpg"
+
+    #print("downloading cover")
     urllib.request.urlretrieve(covers[0], cover_path)
 
+    #printprint("computing theme")
     bg, fg, fg2 = get_theme(cover_path)
 
+    #print("creating image")
     image = Image.new("RGB", (width, height), bg)
 
     cover = Image.open(cover_path)
@@ -148,6 +153,7 @@ def draw_now_playing():
     # setting draw.font doesn't seem to effect the font used when using draw(..., font_size)
     # draw.fontmode = "1" # disable anti aliasing
 
+    #print("adding text")
     x = 0
     y = 10
 
