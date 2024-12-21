@@ -104,6 +104,13 @@ def get_theme(cover_path):
     else:
         # likely incorrect if p[0] is near the mid point
         bg = (255-p[0][0], 255-p[0][1], 255-p[0][2])
+        cr = contrast_ratio(l[0], luminance(bg))
+        # if the contrast isn't high enough just go with white / black
+        if cr < cr_aa_threshold:
+            if l[0] < 0.5:
+                bg = (255, 255, 255)
+            else:
+                bg = (0, 0, 0)
         fg = p[0]
         fg2 = fg
 
