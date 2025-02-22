@@ -167,7 +167,7 @@ def draw_now_playing():
     def get_font(size):
         return ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", size)
 
-    def t(text, color, font_size, stroke=False):
+    def t(text, color, font_size, min_font_size=0, stroke=False):
         nonlocal x, y
         #print(f"printing {text}")
         font = get_font(font_size)
@@ -178,7 +178,9 @@ def draw_now_playing():
             tl = draw.textlength(text, font=font)
             if tl > width:
                 # reduce font size within 50-100% range to fit on screen width
-                font = get_font(max(font_size*width//tl, font_size//2))
+                if min_font_size == 0:
+                    min_font_size = font_size//2
+                font = get_font(max(font_size*width//tl, min_font_size))
                 tl = draw.textlength(text, font=font)
         x_offset = max((width-tl)//2, 0)
         if stroke:
@@ -188,9 +190,9 @@ def draw_now_playing():
             draw.text((x+x_offset, y), text, fill=color, font=font)
         y += font_size*3//2
 
-    t(track_name, fg, 50)
-    t(album, fg2, 40)
-    t(", ".join(track_artists), fg, 40)
+    t(track_name, fg, 50, 30)
+    t(album, fg2, 40, 30)
+    t(", ".join(track_artists), fg, 40, 30)
     t("", fg2, 10)
     t(f"{duration.seconds//60}:{duration.seconds%60:02d}", fg2, 40)
 
