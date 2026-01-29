@@ -9,35 +9,6 @@ from colorthief import ColorThief
 
 player_event = os.getenv('PLAYER_EVENT')
 
-user_name = ""
-client_name = ""
-
-shuffle = ""
-repeat = ""
-auto_play = ""
-filter_explicit_content = ""
-
-volume = ""
-position_ms = ""
-
-item_type = ""
-track_name = ""
-duration_ms = ""
-is_explicit = ""
-language = []
-covers = []
-
-track_number = ""
-disc_number = ""
-popularity = ""
-album = ""
-track_artists = []
-album_artists = []
-
-show_name = ""
-publish_time = ""
-description = ""
-
 def open_epd():
     epd = displayfactory.load_display_driver("waveshare_epd.epd7in3e")
 
