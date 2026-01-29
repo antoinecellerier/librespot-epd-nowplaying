@@ -201,17 +201,14 @@ elif player_event == 'volume_changed':
 
 elif player_event in ('seeked', 'position_correction', 'playing', 'paused'):
     print(player_event)
-#   os.environ['TRACK_ID']
     position_ms = os.environ['POSITION_MS']
-    if player_event in ('paused'): # paused seems to be what's received at end of playback
+    if player_event == 'paused': # paused seems to be what's received at end of playback
         clear_screen()
 
 elif player_event in ('unavailable', 'end_of_track', 'preload_next', 'preloading', 'loading', 'stopped'):
-#   os.environ['TRACK_ID']
     print(player_event)
-    if player_event in ('stopped'): # when librespot stops. not sure if that ever happens
+    if player_event == 'stopped': # when librespot stops. not sure if that ever happens
         clear_screen()
-    pass
 
 elif player_event == 'track_changed':
     print(player_event)
@@ -238,5 +235,3 @@ elif player_event == 'track_changed':
         show_name = os.environ['SHOW_NAME']
         publish_time = datetime.utcfromtimestamp(int(os.environ['PUBLISH_TIME'])).strftime('%Y-%m-%d')
         description = os.environ['DESCRIPTION']
-
-
