@@ -1,7 +1,10 @@
 #!/usr/bin/env python
 import argparse
 import os
+import random
+import time
 from datetime import datetime, timedelta
+from pathlib import Path
 import urllib.request
 
 from omni_epd import displayfactory
@@ -10,7 +13,14 @@ from colorthief import ColorThief
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--horizontal', action='store_true', help='Use horizontal layout')
+parser.add_argument('--idle', action='store_true', help='Display idle art if not playing')
+parser.add_argument('--clear', action='store_true', help='Clear the screen')
+parser.add_argument('--image', type=str, help='Display a specific image (for testing)')
 args = parser.parse_args()
+
+HEARTBEAT_FILE = Path("/tmp/spotify-playing")
+HEARTBEAT_TIMEOUT = 600  # 10 minutes in seconds
+ART_FOLDER = Path.home() / "art"
 
 player_event = os.getenv('PLAYER_EVENT')
 
@@ -26,6 +36,110 @@ def clear_screen():
     print("Clear screen")
     epd = open_epd()
     epd.clear()
+    epd.close()
+
+
+def write_heartbeat():
+    """Write current timestamp to heartbeat file."""
+    HEARTBEAT_FILE.write_text(str(time.time()))
+    print(f"Heartbeat written to {HEARTBEAT_FILE}")
+
+
+def remove_heartbeat():
+    """Remove heartbeat file."""
+    if HEARTBEAT_FILE.exists():
+        HEARTBEAT_FILE.unlink()
+        print(f"Heartbeat removed: {HEARTBEAT_FILE}")
+
+
+def is_playing():
+    """Check if music is currently playing (heartbeat exists and is recent)."""
+    if not HEARTBEAT_FILE.exists():
+        return False
+    try:
+        heartbeat_time = float(HEARTBEAT_FILE.read_text().strip())
+        age = time.time() - heartbeat_time
+        return age < HEARTBEAT_TIMEOUT
+    except (ValueError, OSError):
+        return False
+
+
+def display_idle_art(image_path=None):
+    """Display a specific image, random image from art folder, or placeholder."""
+    print("Display idle art")
+    epd = open_epd()
+
+    horizontal = args.horizontal
+    if horizontal:
+        width = epd.width
+        height = epd.height
+    else:
+        width = epd.height
+        height = epd.width
+
+    image = Image.new("RGB", (width, height), (0, 0, 0))
+
+    # Determine which image to display
+    art_path = None
+    if image_path:
+        art_path = Path(image_path)
+        if not art_path.exists():
+            print(f"Image not found: {art_path}")
+            art_path = None
+    else:
+        # Look for images in art folder
+        art_images = []
+        if ART_FOLDER.exists():
+            for ext in ('*.png', '*.jpg', '*.jpeg', '*.gif', '*.bmp'):
+                art_images.extend(ART_FOLDER.glob(ext))
+                art_images.extend(ART_FOLDER.glob(ext.upper()))
+        if art_images:
+            art_path = random.choice(art_images)
+
+    if art_path:
+        print(f"Displaying: {art_path}")
+        try:
+            art = Image.open(art_path)
+            # Scale and crop to fit screen
+            art_ratio = art.width / art.height
+            screen_ratio = width / height
+
+            if art_ratio > screen_ratio:
+                # Image is wider than screen, fit by height
+                new_height = height
+                new_width = int(height * art_ratio)
+            else:
+                # Image is taller than screen, fit by width
+                new_width = width
+                new_height = int(width / art_ratio)
+
+            art = art.resize((new_width, new_height), Image.Resampling.LANCZOS)
+            # Center crop
+            left = (new_width - width) // 2
+            top = (new_height - height) // 2
+            art = art.crop((left, top, left + width, top + height))
+            image = art.convert("RGB")
+        except Exception as e:
+            print(f"Error loading art: {e}")
+            # Fall through to placeholder
+    else:
+        # No art available, show placeholder
+        print("No art found, showing placeholder")
+        draw = ImageDraw.Draw(image)
+        try:
+            font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 30)
+        except OSError:
+            font = ImageFont.load_default()
+        text = "No art in ~/art/"
+        bbox = draw.textbbox((0, 0), text, font=font)
+        text_width = bbox[2] - bbox[0]
+        text_height = bbox[3] - bbox[1]
+        x = (width - text_width) // 2
+        y = (height - text_height) // 2
+        draw.text((x, y), text, fill=(255, 255, 255), font=font)
+
+    epd.display(image)
+    epd.close()
 
 def get_theme(cover_path):
     ct = ColorThief(cover_path)
@@ -183,9 +297,22 @@ def draw_now_playing():
     epd.close()
 
 
-#print(player_event)
+# Handle command-line flags (--idle, --clear, --image)
+if args.clear:
+    clear_screen()
+elif args.image:
+    display_idle_art(args.image)
+elif args.idle:
+    if is_playing():
+        print("Music is playing, skipping idle art refresh")
+    else:
+        display_idle_art()
+elif player_event is None:
+    # No event and no flags, nothing to do
+    pass
 
-if player_event in ('session_connected', 'session_disconnected'):
+# Handle librespot events
+elif player_event in ('session_connected', 'session_disconnected'):
     user_name = os.environ['USER_NAME']
     # os.environ['CONNECTION_ID']
 
@@ -213,16 +340,21 @@ elif player_event == 'volume_changed':
 elif player_event in ('seeked', 'position_correction', 'playing', 'paused'):
     print(player_event)
     position_ms = os.environ['POSITION_MS']
-    if player_event == 'paused': # paused seems to be what's received at end of playback
-        clear_screen()
+    if player_event == 'playing':
+        write_heartbeat()
+    elif player_event == 'paused':  # paused seems to be what's received at end of playback
+        remove_heartbeat()
+        display_idle_art()
 
 elif player_event in ('unavailable', 'end_of_track', 'preload_next', 'preloading', 'loading', 'stopped'):
     print(player_event)
-    if player_event == 'stopped': # when librespot stops. not sure if that ever happens
-        clear_screen()
+    if player_event == 'stopped':  # when librespot stops. not sure if that ever happens
+        remove_heartbeat()
+        display_idle_art()
 
 elif player_event == 'track_changed':
     print(player_event)
+    write_heartbeat()
     item_type = os.environ['ITEM_TYPE']
     # os.environ['TRACK_ID']
     # os.environ['URI']
