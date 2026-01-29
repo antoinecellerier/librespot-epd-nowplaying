@@ -38,6 +38,52 @@ Recommended cron jobs:
 0 4 * * * source ~/venv/bin/activate && python ~/screen/nowplaying.py --clear
 ```
 
+## Librespot setup
+
+The script is designed to be called by librespot via its `--onevent` flag. Here's a typical setup:
+
+### Event handler integration
+
+```bash
+librespot --onevent /path/to/nowplaying.py [other options]
+```
+
+### Example startup script
+
+A wrapper script can handle retries and logging:
+
+```bash
+#!/bin/bash
+source /path/to/venv/bin/activate
+
+while true; do
+    librespot \
+        -n "Device Name" \
+        -b 320 \
+        --backend alsa \
+        --onevent /path/to/nowplaying.py \
+        2>&1 | tee -a ~/librespot.log
+
+    # Exit if librespot exited cleanly
+    [ $? -eq 0 ] && break
+
+    # Wait for audio device before retrying
+    until aplay -l | grep -q "USB Audio"; do
+        sleep 10
+    done
+done
+```
+
+### Auto-start on boot
+
+Use a cron job or systemd to start librespot at boot. With cron:
+
+```
+@reboot screen -dmS spotify /path/to/librespot-start.sh
+```
+
+Using `screen` allows reattaching to the session for debugging (`screen -r spotify`).
+
 ![Now playing screen 2 - epd7in3e](photos/final-epd7in3e-2.jpg)
 ![Now playing screen 3 - epd7in3e](photos/final-epd7in3e-3.jpg)
 ![Now playing screen 1 - epd7in5b](photos/final-epd7in5b-1.jpg)
