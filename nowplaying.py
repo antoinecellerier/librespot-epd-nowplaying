@@ -184,7 +184,7 @@ def draw_now_playing():
                 tl = draw.textlength(text, font=font)
         x_offset = max((width-tl)//2, 0)
         if stroke:
-            #sw = 4 #font_size//6
+            sw = font_size // 6
             draw.text((x+x_offset, y), text, stroke_width=sw, stroke_fill=color, fill="white", font=font)
         else:
             draw.text((x+x_offset, y), text, fill=color, font=font)
