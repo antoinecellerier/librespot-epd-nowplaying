@@ -52,8 +52,6 @@ def get_theme(cover_path):
     cr02 = contrast_ratio(l[0], l[2])
     cr12 = contrast_ratio(l[1], l[2])
     #print("cr01", cr01, "cr02", cr02, "cr12", cr12)
-    lmin = min(l)
-    lmax = max(l)
 
     cr_aa_threshold = 4.5
     if cr01 >= cr_aa_threshold:
