@@ -9,6 +9,45 @@ Uses:
  * omni-epd: https://github.com/robweber/omni-epd/
  * WaveShare 7.3inch E Ink Spectra 6 (E6) Full Color E-Paper Display: https://www.waveshare.com/7.3inch-e-paper-hat-e.htm
 
+## Installation
+
+### Python virtual environment
+
+Create a virtual environment and install dependencies:
+
+```bash
+python3 -m venv ~/venv
+source ~/venv/bin/activate
+
+# Core dependencies
+pip install pillow colorthief
+
+# omni-epd (e-paper display abstraction)
+pip install omni-epd
+
+# WaveShare e-paper driver (for Raspberry Pi)
+pip install "git+https://github.com/waveshareteam/e-Paper.git#subdirectory=RaspberryPi_JetsonNano/python"
+```
+
+### System dependencies
+
+On Raspberry Pi, you may need to enable SPI and install system packages:
+
+```bash
+sudo raspi-config  # Enable SPI under Interface Options
+sudo apt install python3-dev python3-pip libopenjp2-7
+```
+
+### Display configuration
+
+The display driver is configured in `nowplaying.py`. Edit the `open_epd()` function to change the display type:
+
+```python
+epd = displayfactory.load_display_driver("waveshare_epd.epd7in3e")
+```
+
+See [omni-epd documentation](https://github.com/robweber/omni-epd/) for supported displays.
+
 ## Features
 
 - Displays track name, album, artists, and duration with album art
