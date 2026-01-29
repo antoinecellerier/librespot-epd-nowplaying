@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import argparse
 import os
 from datetime import datetime, timedelta
 import urllib.request
@@ -6,6 +7,10 @@ import urllib.request
 from omni_epd import displayfactory
 from PIL import Image, ImageDraw, ImageFont
 from colorthief import ColorThief
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--horizontal', action='store_true', help='Use horizontal layout')
+args = parser.parse_args()
 
 player_event = os.getenv('PLAYER_EVENT')
 
@@ -91,7 +96,7 @@ def draw_now_playing():
     #print(f"Draw now playing {track_name}")
     epd = open_epd()
 
-    horizontal = False
+    horizontal = args.horizontal
     if horizontal:
         width = epd.width
         height = epd.height
@@ -132,7 +137,14 @@ def draw_now_playing():
 
     #print("adding text")
     x = 0
-    y = 10
+    # font sizes for: track_name, album, artists, spacer, duration
+    font_sizes = [50, 40, 40, 10, 40]
+    # total text block height (sum of line heights, minus trailing space on last line)
+    text_height = sum(fs * 3 // 2 for fs in font_sizes) - font_sizes[-1] // 2
+    if horizontal:
+        y = (height - text_height) // 2
+    else:
+        y = 10
 
     def get_font(size):
         return ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", size)
