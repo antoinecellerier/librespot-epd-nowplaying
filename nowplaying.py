@@ -1,10 +1,9 @@
 #!/usr/bin/env python
 import os
-import sys
 from datetime import datetime, timedelta
 import urllib.request
 
-from omni_epd import displayfactory, EPDNotFoundError
+from omni_epd import displayfactory
 from PIL import Image, ImageDraw, ImageFont
 from colorthief import ColorThief
 
