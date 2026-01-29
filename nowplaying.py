@@ -121,8 +121,10 @@ def draw_now_playing():
 
     if horizontal:
         image.paste(cover, (width-coversize-margin, (height-cover.height)//2))
+        text_width = width - coversize - margin
     else:
         image.paste(cover, (margin, height-cover.height-margin))
+        text_width = width
 
     draw = ImageDraw.Draw(image)
     # setting draw.font doesn't seem to effect the font used when using draw(..., font_size)
@@ -140,17 +142,17 @@ def draw_now_playing():
         #print(f"printing {text}")
         font = get_font(font_size)
         tl = draw.textlength(text, font=font)
-        if tl > width:
+        if tl > text_width:
             # try to strip " - 2015 Remaster" or " (2015 Remaster)" suffixes
             text = text.split(" - ")[0].split(" (")[0]
             tl = draw.textlength(text, font=font)
-            if tl > width:
+            if tl > text_width:
                 # reduce font size within 50-100% range to fit on screen width
                 if min_font_size == 0:
                     min_font_size = font_size//2
-                font = get_font(max(font_size*width//tl, min_font_size))
+                font = get_font(max(font_size*text_width//tl, min_font_size))
                 tl = draw.textlength(text, font=font)
-        x_offset = max((width-tl)//2, 0)
+        x_offset = max((text_width-tl)//2, 0)
         if stroke:
             sw = font_size // 6
             draw.text((x+x_offset, y), text, stroke_width=sw, stroke_fill=color, fill="white", font=font)
@@ -163,9 +165,6 @@ def draw_now_playing():
     t(", ".join(track_artists), fg, 40, 30)
     t("", fg2, 10)
     t(f"{duration.seconds//60}:{duration.seconds%60:02d}", fg2, 40)
-
-    if not horizontal:
-        image = image.rotate(90)
 
     epd.display(image)
 
