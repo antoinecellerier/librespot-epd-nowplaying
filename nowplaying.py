@@ -197,7 +197,7 @@ def draw_now_playing():
     t(f"{duration.seconds//60}:{duration.seconds%60:02d}", fg2, 40)
 
     if not horizontal:
-        image.rotate(90)
+        image = image.rotate(90)
 
     epd.display(image)
 
