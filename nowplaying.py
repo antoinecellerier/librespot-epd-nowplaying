@@ -8,7 +8,7 @@ from pathlib import Path
 import urllib.request
 
 from omni_epd import displayfactory
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw, ImageEnhance, ImageFont
 from colorthief import ColorThief
 
 parser = argparse.ArgumentParser()
@@ -31,6 +31,24 @@ def open_epd():
     epd.mode = 'color'
 
     return epd
+
+EPD_COLOR_BOOST = 1.5
+EPD_CONTRAST_BOOST = 1.3
+EPD_SHARPNESS_BOOST = 1.5
+
+def enhance_for_epd(image):
+    """Boost saturation, contrast, and sharpness to compensate for limited e-ink palette."""
+    image = ImageEnhance.Color(image).enhance(EPD_COLOR_BOOST)
+    image = ImageEnhance.Contrast(image).enhance(EPD_CONTRAST_BOOST)
+    image = ImageEnhance.Sharpness(image).enhance(EPD_SHARPNESS_BOOST)
+    return image
+
+def enhance_color(rgb):
+    """Apply the same saturation and contrast boost to a single RGB tuple."""
+    img = Image.new("RGB", (1, 1), rgb)
+    img = ImageEnhance.Color(img).enhance(EPD_COLOR_BOOST)
+    img = ImageEnhance.Contrast(img).enhance(EPD_CONTRAST_BOOST)
+    return img.getpixel((0, 0))
 
 def clear_screen():
     print("Clear screen")
@@ -138,6 +156,7 @@ def display_idle_art(image_path=None):
         y = (height - text_height) // 2
         draw.text((x, y), text, fill=(255, 255, 255), font=font)
 
+    image = enhance_for_epd(image)
     epd.display(image)
     epd.close()
 
@@ -204,7 +223,7 @@ def get_theme(cover_path):
     #print(f"bg  {bg}")
     #print(f"fg  {fg}")
     #print(f"fg2 {fg2}")
-    return bg, fg, fg2
+    return enhance_color(bg), enhance_color(fg), enhance_color(fg2)
 
 def draw_now_playing():
     #print(f"Draw now playing {track_name}")
@@ -292,6 +311,7 @@ def draw_now_playing():
     t("", fg2, 10)
     t(f"{duration.seconds//60}:{duration.seconds%60:02d}", fg2, 40)
 
+    image = enhance_for_epd(image)
     epd.display(image)
 
     epd.close()
