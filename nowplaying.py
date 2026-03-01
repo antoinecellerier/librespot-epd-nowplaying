@@ -424,19 +424,20 @@ elif player_event is None:
 # Handle librespot events
 elif player_event in ('session_connected', 'session_disconnected'):
     user_name = os.environ['USER_NAME']
-    # os.environ['CONNECTION_ID']
+    connection_id = os.environ['CONNECTION_ID']
 
 elif player_event == 'session_client_changed':
-    # os.environ['CLIENT_ID']
+    client_id = os.environ['CLIENT_ID']
     client_name = os.environ['CLIENT_NAME']
-    # os.environ['CLIENT_BRAND_NAME']
-    # os.environ['CLIENT_MODEL_NAME']
+    client_brand_name = os.environ['CLIENT_BRAND_NAME']
+    client_model_name = os.environ['CLIENT_MODEL_NAME']
 
 elif player_event == 'shuffle_changed':
     shuffle = os.environ['SHUFFLE']
 
 elif player_event == 'repeat_changed':
     repeat = os.environ['REPEAT']
+    repeat_track = os.environ['REPEAT_TRACK']
 
 elif player_event == 'auto_play_changed':
     auto_play = os.environ['AUTO_PLAY']
@@ -448,19 +449,34 @@ elif player_event == 'volume_changed':
     volume = os.environ['VOLUME']
 
 elif player_event in ('seeked', 'position_correction', 'playing', 'paused'):
-    print(player_event)
+    track_id = os.environ['TRACK_ID']
     position_ms = os.environ['POSITION_MS']
     if player_event == 'playing':
+        print(player_event)
         write_heartbeat()
     elif player_event == 'paused':  # paused seems to be what's received at end of playback
+        print(player_event)
         remove_heartbeat()
         display_idle_art()
 
 elif player_event in ('unavailable', 'end_of_track', 'preload_next', 'preloading', 'loading', 'stopped'):
-    print(player_event)
+    track_id = os.environ['TRACK_ID']
     if player_event == 'stopped':  # when librespot stops. not sure if that ever happens
+        print(player_event)
         remove_heartbeat()
         display_idle_art()
+
+elif player_event == 'set_queue':
+    context_uri = os.environ.get('CONTEXT_URI', '')
+    current_track = os.environ.get('CURRENT_TRACK', '')
+    next_tracks = os.environ.get('NEXT_TRACKS', '')
+    prev_tracks = os.environ.get('PREV_TRACKS', '')
+
+elif player_event == 'play_request_id_changed':
+    play_request_id = os.environ['PLAY_REQUEST_ID']
+
+elif player_event == 'sink':
+    sink_status = os.environ['SINK_STATUS']
 
 elif player_event == 'track_changed':
     print(player_event)
