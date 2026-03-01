@@ -32,7 +32,7 @@ When making changes, keep documentation up to date:
 1. Parses librespot event data from environment variables (`PLAYER_EVENT`, `NAME`, `ALBUM`, `ARTISTS`, `COVERS`, etc.)
 2. Downloads album cover art and extracts a color theme using ColorThief
 3. Renders track info and cover art to an image using PIL
-4. Displays on the e-paper screen via omni-epd
+4. Displays on the e-paper screen via waveshare-epd driver
 
 Key layout modes:
 - Portrait (default): Cover at bottom, text at top
@@ -72,6 +72,7 @@ Recommended cron jobs on pizero:
 
 ## Dependencies
 
-- omni-epd: E-paper display abstraction layer
+- waveshare-epd: Waveshare e-paper display driver (used directly for faster imports, ~0.8s vs ~1.4s)
+- omni-epd (optional): Fallback display abstraction for non-Waveshare displays. Set `EPD_DRIVER` env var to an omni-epd driver name (e.g. `inky.impression`) to use it.
 - PIL/Pillow: Image creation and manipulation
 - colorthief: Extract color palette from album art for theming

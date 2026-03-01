@@ -6,8 +6,8 @@ A very naive librespot event handler which displays now playing track informatio
 
 Uses:
  * librespot: https://github.com/librespot-org/librespot/ (requires dev branch / version 5.0 events)
- * omni-epd: https://github.com/robweber/omni-epd/
  * WaveShare 7.3inch E Ink Spectra 6 (E6) Full Color E-Paper Display: https://www.waveshare.com/7.3inch-e-paper-hat-e.htm
+ * omni-epd (optional, for non-Waveshare displays): https://github.com/robweber/omni-epd/
 
 ## Installation
 
@@ -22,11 +22,11 @@ source ~/venv/bin/activate
 # Core dependencies
 pip install pillow colorthief
 
-# omni-epd (e-paper display abstraction)
-pip install omni-epd
-
 # WaveShare e-paper driver (for Raspberry Pi)
 pip install "git+https://github.com/waveshareteam/e-Paper.git#subdirectory=RaspberryPi_JetsonNano/python"
+
+# Optional: omni-epd (only needed for non-Waveshare displays)
+# pip install omni-epd
 ```
 
 ### System dependencies
@@ -40,10 +40,14 @@ sudo apt install python3-dev python3-pip libopenjp2-7
 
 ### Display configuration
 
-The display driver is configured in `nowplaying.py`. Edit the `open_epd()` function to change the display type:
+By default, the script uses the WaveShare 7.3" Spectra 6 driver directly. To use a different display, set the `EPD_DRIVER` environment variable:
 
-```python
-epd = displayfactory.load_display_driver("waveshare_epd.epd7in3e")
+```bash
+# WaveShare displays (fast path, uses waveshare_epd directly)
+export EPD_DRIVER=waveshare_epd.epd7in3e  # default
+
+# Non-Waveshare displays (falls back to omni-epd, requires pip install omni-epd)
+export EPD_DRIVER=inky.impression
 ```
 
 See [omni-epd documentation](https://github.com/robweber/omni-epd/) for supported displays.

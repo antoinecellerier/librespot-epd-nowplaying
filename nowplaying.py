@@ -10,9 +10,22 @@ from datetime import datetime, timedelta
 from pathlib import Path
 import urllib.request
 
-from omni_epd import displayfactory
 from PIL import Image, ImageDraw, ImageEnhance, ImageFont
 from colorthief import ColorThief
+
+# Use waveshare_epd directly for faster imports (~0.8s vs ~1.4s with omni-epd).
+# Falls back to omni-epd for non-Waveshare displays.
+EPD_DRIVER = os.environ.get("EPD_DRIVER", "waveshare_epd.epd7in3e")
+_use_omni_epd = False
+try:
+    if "." in EPD_DRIVER:
+        pkg, mod = EPD_DRIVER.rsplit(".", 1)
+        _epd_module = __import__(EPD_DRIVER, fromlist=[mod])
+    else:
+        raise ImportError("no module name")
+except ImportError:
+    from omni_epd import displayfactory
+    _use_omni_epd = True
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--horizontal', action='store_true', help='Use horizontal layout')
@@ -28,13 +41,45 @@ CACHE_DIR = Path(os.environ.get("XDG_CACHE_HOME", Path.home() / ".cache")) / "no
 
 player_event = os.getenv('PLAYER_EVENT')
 
+
+class EPDWrapper:
+    """Thin wrapper that normalizes the direct waveshare driver and omni-epd APIs."""
+
+    def __init__(self, epd, use_omni):
+        self._epd = epd
+        self._use_omni = use_omni
+        self.width = epd.width
+        self.height = epd.height
+
+    def display(self, image):
+        if self._use_omni:
+            self._epd.display(image)
+        else:
+            self._epd.display(self._epd.getbuffer(image))
+
+    def clear(self):
+        if self._use_omni:
+            self._epd.clear()
+        else:
+            self._epd.Clear()
+
+    def close(self):
+        if self._use_omni:
+            self._epd.close()
+        else:
+            self._epd.sleep()
+
+
 def open_epd():
-    epd = displayfactory.load_display_driver("waveshare_epd.epd7in3e")
-
-    epd.prepare()
-    epd.mode = 'color'
-
-    return epd
+    if _use_omni_epd:
+        epd = displayfactory.load_display_driver(EPD_DRIVER)
+        epd.prepare()
+        epd.mode = 'color'
+        return EPDWrapper(epd, use_omni=True)
+    else:
+        epd = _epd_module.EPD()
+        epd.init()
+        return EPDWrapper(epd, use_omni=False)
 
 EPD_COLOR_BOOST = 1.5
 EPD_CONTRAST_BOOST = 1.3
