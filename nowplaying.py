@@ -1,7 +1,10 @@
 #!/usr/bin/env python
 import argparse
+import hashlib
+import json
 import os
 import random
+import shutil
 import time
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -21,6 +24,7 @@ args = parser.parse_args()
 HEARTBEAT_FILE = Path("/tmp/spotify-playing")
 HEARTBEAT_TIMEOUT = 600  # 10 minutes in seconds
 ART_FOLDER = Path.home() / "art"
+CACHE_DIR = Path(os.environ.get("XDG_CACHE_HOME", Path.home() / ".cache")) / "nowplaying"
 
 player_event = os.getenv('PLAYER_EVENT')
 
@@ -160,6 +164,63 @@ def display_idle_art(image_path=None):
     epd.display(image)
     epd.close()
 
+def cache_key(cover_url):
+    return hashlib.sha256(cover_url.encode()).hexdigest()[:16]
+
+
+def get_cached(cover_url, coversize):
+    """Return (cover_path, theme) from cache, or (None, None) on miss."""
+    key = cache_key(cover_url)
+    cover_path = CACHE_DIR / f"{key}_{coversize}.jpg"
+    meta_path = CACHE_DIR / f"{key}.json"
+    try:
+        if cover_path.exists() and meta_path.exists():
+            data = json.loads(meta_path.read_text())
+            validate_cache_data(data)
+            return str(cover_path), tuple(map(tuple, data["theme"]))
+    except (json.JSONDecodeError, KeyError, TypeError, ValueError, OSError) as e:
+        print(f"Cache read error, will refresh: {e}")
+    return None, None
+
+
+def validate_cache_data(data):
+    """Validate cache JSON structure. Raises ValueError on invalid data."""
+    if not isinstance(data, dict):
+        raise ValueError("cache data is not a dict")
+    for key in ("theme", "cover_url", "track", "album", "artists", "duration_ms"):
+        if key not in data:
+            raise ValueError(f"missing key: {key}")
+    theme = data["theme"]
+    if not isinstance(theme, list) or len(theme) != 3:
+        raise ValueError(f"theme must be a list of 3 colors, got {type(theme).__name__} len {len(theme) if isinstance(theme, list) else '?'}")
+    for i, color in enumerate(theme):
+        if not isinstance(color, list) or len(color) != 3:
+            raise ValueError(f"theme[{i}] must be a list of 3 ints")
+        if not all(isinstance(c, int) and 0 <= c <= 255 for c in color):
+            raise ValueError(f"theme[{i}] values must be ints 0-255")
+    if not isinstance(data["cover_url"], str):
+        raise ValueError("cover_url must be a string")
+    if not isinstance(data["track"], str):
+        raise ValueError("track must be a string")
+    if not isinstance(data["album"], str):
+        raise ValueError("album must be a string")
+    if not isinstance(data["artists"], list) or not all(isinstance(a, str) for a in data["artists"]):
+        raise ValueError("artists must be a list of strings")
+    if not isinstance(data["duration_ms"], int):
+        raise ValueError("duration_ms must be an int")
+
+
+def put_cache(cover_url, coversize, cover_img, theme, metadata):
+    """Store resized cover image, theme colors, and track metadata in cache."""
+    CACHE_DIR.mkdir(parents=True, exist_ok=True)
+    key = cache_key(cover_url)
+    cached_cover = CACHE_DIR / f"{key}_{coversize}.jpg"
+    meta_path = CACHE_DIR / f"{key}.json"
+    cover_img.save(cached_cover)
+    data = {"theme": theme, "cover_url": cover_url, **metadata}
+    meta_path.write_text(json.dumps(data, indent=2))
+
+
 def get_theme(cover_path):
     ct = ColorThief(cover_path)
     # This returns color_count +1 colors
@@ -238,24 +299,46 @@ def draw_now_playing():
         height = epd.width
 
 
-    cover_path = "/tmp/cover.jpg"
-
-    #print("downloading cover")
-    urllib.request.urlretrieve(covers[0], cover_path)
-
-    #printprint("computing theme")
-    bg, fg, fg2 = get_theme(cover_path)
-
-    #print("creating image")
-    image = Image.new("RGB", (width, height), bg)
-
-    cover = Image.open(cover_path)
     margin = 0 # cover margin
     if horizontal:
         coversize = height-2*margin
     else:
         coversize = width-2*margin
-    cover = cover.resize((coversize, coversize))
+
+    cover_url = covers[0]
+    t0 = time.time()
+
+    cached_cover, cached_theme = get_cached(cover_url, coversize)
+    if cached_cover and cached_theme:
+        cover = Image.open(cached_cover)
+        bg, fg, fg2 = cached_theme
+        print(f"Cache hit: {time.time() - t0:.3f}s")
+    else:
+        cover_path = "/tmp/cover.jpg"
+        urllib.request.urlretrieve(cover_url, cover_path)
+        t1 = time.time()
+        print(f"Download: {t1 - t0:.3f}s")
+
+        bg, fg, fg2 = get_theme(cover_path)
+        t2 = time.time()
+        print(f"Theme: {t2 - t1:.3f}s")
+
+        cover = Image.open(cover_path)
+        cover = cover.resize((coversize, coversize))
+        t3 = time.time()
+        print(f"Resize: {t3 - t2:.3f}s")
+
+        metadata = {
+            "track": track_name,
+            "album": album,
+            "artists": track_artists,
+            "duration_ms": int(duration.total_seconds() * 1000),
+        }
+        put_cache(cover_url, coversize, cover, (bg, fg, fg2), metadata)
+        print(f"Total (uncached): {t3 - t0:.3f}s")
+
+    #print("creating image")
+    image = Image.new("RGB", (width, height), bg)
 
     if horizontal:
         image.paste(cover, (width-coversize-margin, (height-cover.height)//2))

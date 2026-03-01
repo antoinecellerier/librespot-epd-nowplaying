@@ -38,6 +38,16 @@ Key layout modes:
 - Portrait (default): Cover at bottom, text at top
 - Horizontal (`--horizontal`): Cover on right, text column on left (vertically centered)
 
+### Cover Art Cache
+
+Album cover art, resized images, and color themes are cached in `$XDG_CACHE_HOME/nowplaying/` (defaults to `~/.cache/nowplaying/`) to avoid expensive recomputation on the Pi Zero (~4s uncached vs ~0.05s cached).
+
+Per cover URL (keyed by SHA256 hash):
+- `{hash}_{coversize}.jpg` - pre-resized cover image for the target display size
+- `{hash}.json` - theme colors (bg/fg/fg2) and track metadata (name, album, artists, duration)
+
+The cache has no eviction policy; entries accumulate but are small (one JPEG + one JSON per unique cover).
+
 ### Idle Art Display
 
 When Spotify is not playing, the script displays random art from `~/art/`:
