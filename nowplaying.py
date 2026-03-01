@@ -187,7 +187,10 @@ def validate_cache_data(data):
     """Validate cache JSON structure. Raises ValueError on invalid data."""
     if not isinstance(data, dict):
         raise ValueError("cache data is not a dict")
-    for key in ("theme", "cover_url", "track", "album", "artists", "duration_ms"):
+    required_str = ("cover_url", "track", "track_id", "uri", "album")
+    required_str_list = ("artists", "album_artists")
+    required_int = ("duration_ms", "track_number", "disc_number")
+    for key in ("theme", *required_str, *required_str_list, *required_int):
         if key not in data:
             raise ValueError(f"missing key: {key}")
     theme = data["theme"]
@@ -198,16 +201,15 @@ def validate_cache_data(data):
             raise ValueError(f"theme[{i}] must be a list of 3 ints")
         if not all(isinstance(c, int) and 0 <= c <= 255 for c in color):
             raise ValueError(f"theme[{i}] values must be ints 0-255")
-    if not isinstance(data["cover_url"], str):
-        raise ValueError("cover_url must be a string")
-    if not isinstance(data["track"], str):
-        raise ValueError("track must be a string")
-    if not isinstance(data["album"], str):
-        raise ValueError("album must be a string")
-    if not isinstance(data["artists"], list) or not all(isinstance(a, str) for a in data["artists"]):
-        raise ValueError("artists must be a list of strings")
-    if not isinstance(data["duration_ms"], int):
-        raise ValueError("duration_ms must be an int")
+    for key in required_str:
+        if not isinstance(data[key], str):
+            raise ValueError(f"{key} must be a string")
+    for key in required_str_list:
+        if not isinstance(data[key], list) or not all(isinstance(a, str) for a in data[key]):
+            raise ValueError(f"{key} must be a list of strings")
+    for key in required_int:
+        if not isinstance(data[key], int):
+            raise ValueError(f"{key} must be an int")
 
 
 def put_cache(cover_url, coversize, cover_img, theme, metadata):
@@ -330,9 +332,14 @@ def draw_now_playing():
 
         metadata = {
             "track": track_name,
+            "track_id": track_id,
+            "uri": uri,
             "album": album,
             "artists": track_artists,
+            "album_artists": album_artists,
             "duration_ms": int(duration.total_seconds() * 1000),
+            "track_number": int(track_number),
+            "disc_number": int(disc_number),
         }
         put_cache(cover_url, coversize, cover, (bg, fg, fg2), metadata)
         print(f"Total (uncached): {t3 - t0:.3f}s")
@@ -459,8 +466,8 @@ elif player_event == 'track_changed':
     print(player_event)
     write_heartbeat()
     item_type = os.environ['ITEM_TYPE']
-    # os.environ['TRACK_ID']
-    # os.environ['URI']
+    track_id = os.environ['TRACK_ID']
+    uri = os.environ['URI']
     track_name = os.environ['NAME']
     duration = timedelta(milliseconds=int(os.environ['DURATION_MS']))
     is_explicit = os.environ['IS_EXPLICIT']
