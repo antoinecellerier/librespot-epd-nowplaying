@@ -64,14 +64,14 @@ def clear_screen():
 def write_heartbeat():
     """Write current timestamp to heartbeat file."""
     HEARTBEAT_FILE.write_text(str(time.time()))
-    print(f"Heartbeat written to {HEARTBEAT_FILE}")
+    #print(f"Heartbeat written to {HEARTBEAT_FILE}")
 
 
 def remove_heartbeat():
     """Remove heartbeat file."""
     if HEARTBEAT_FILE.exists():
         HEARTBEAT_FILE.unlink()
-        print(f"Heartbeat removed: {HEARTBEAT_FILE}")
+        #print(f"Heartbeat removed: {HEARTBEAT_FILE}")
 
 
 def is_playing():
@@ -314,21 +314,21 @@ def draw_now_playing():
     if cached_cover and cached_theme:
         cover = Image.open(cached_cover)
         bg, fg, fg2 = cached_theme
-        print(f"Cache hit: {time.time() - t0:.3f}s")
+        #print(f"Cache hit: {time.time() - t0:.3f}s")
     else:
         cover_path = "/tmp/cover.jpg"
         urllib.request.urlretrieve(cover_url, cover_path)
         t1 = time.time()
-        print(f"Download: {t1 - t0:.3f}s")
+        #print(f"Download: {t1 - t0:.3f}s")
 
         bg, fg, fg2 = get_theme(cover_path)
         t2 = time.time()
-        print(f"Theme: {t2 - t1:.3f}s")
+        #print(f"Theme: {t2 - t1:.3f}s")
 
         cover = Image.open(cover_path)
         cover = cover.resize((coversize, coversize))
         t3 = time.time()
-        print(f"Resize: {t3 - t2:.3f}s")
+        #print(f"Resize: {t3 - t2:.3f}s")
 
         metadata = {
             "track": track_name,
@@ -342,7 +342,7 @@ def draw_now_playing():
             "disc_number": int(disc_number),
         }
         put_cache(cover_url, coversize, cover, (bg, fg, fg2), metadata)
-        print(f"Total (uncached): {t3 - t0:.3f}s")
+        #print(f"Total (uncached): {t3 - t0:.3f}s")
 
     #print("creating image")
     image = Image.new("RGB", (width, height), bg)
