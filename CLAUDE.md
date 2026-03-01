@@ -48,6 +48,10 @@ Per cover URL (keyed by SHA256 hash):
 
 The cache has no eviction policy; entries accumulate but are small (one JPEG + one JSON per unique cover).
 
+### EPD-Aware Contrast Checking
+
+The 6-color e-ink display (black, white, red, green, blue, yellow) renders colors very differently from an RGB monitor — e.g., dark grays render as black, cyan and blue are indistinguishable. Theme color contrast checks use `epd_perceived_color()` which simulates display rendering by quantizing a swatch to the 6-color palette with Floyd-Steinberg dithering, then averaging the result. This ensures the WCAG contrast ratio reflects what the display actually shows, not the raw RGB values.
+
 ### Idle Art Display
 
 When Spotify is not playing, the script displays random art from `~/art/`:

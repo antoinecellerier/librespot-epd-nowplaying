@@ -40,19 +40,40 @@ EPD_COLOR_BOOST = 1.5
 EPD_CONTRAST_BOOST = 1.3
 EPD_SHARPNESS_BOOST = 1.5
 
+EPD_PALETTE = [(0, 0, 0), (255, 255, 255), (255, 0, 0), (0, 255, 0), (0, 0, 255), (255, 255, 0)]
+_palette_image = None
+
+
+def epd_perceived_color(rgb):
+    """Simulate how the 6-color e-ink display renders an RGB color.
+
+    RGB contrast ratios are misleading on the EPD — e.g., dark grays all render
+    as black and cyan is indistinguishable from blue. This quantizes a swatch to
+    the 6-color palette with Floyd-Steinberg dithering, then averages the result
+    to approximate what the display actually shows.
+    """
+    global _palette_image
+    if _palette_image is None:
+        flat = [c for rgb in EPD_PALETTE for c in rgb] + [0] * (768 - len(EPD_PALETTE) * 3)
+        _palette_image = Image.new("P", (1, 1))
+        _palette_image.putpalette(flat)
+    swatch = Image.new("RGB", (64, 64), rgb)
+    quantized = swatch.quantize(colors=len(EPD_PALETTE), palette=_palette_image, dither=Image.Dither.FLOYDSTEINBERG)
+    rgb_result = quantized.convert("RGB")
+    pixels = list(rgb_result.getdata())
+    n = len(pixels)
+    r = sum(p[0] for p in pixels) // n
+    g = sum(p[1] for p in pixels) // n
+    b = sum(p[2] for p in pixels) // n
+    return (r, g, b)
+
+
 def enhance_for_epd(image):
     """Boost saturation, contrast, and sharpness to compensate for limited e-ink palette."""
     image = ImageEnhance.Color(image).enhance(EPD_COLOR_BOOST)
     image = ImageEnhance.Contrast(image).enhance(EPD_CONTRAST_BOOST)
     image = ImageEnhance.Sharpness(image).enhance(EPD_SHARPNESS_BOOST)
     return image
-
-def enhance_color(rgb):
-    """Apply the same saturation and contrast boost to a single RGB tuple."""
-    img = Image.new("RGB", (1, 1), rgb)
-    img = ImageEnhance.Color(img).enhance(EPD_COLOR_BOOST)
-    img = ImageEnhance.Contrast(img).enhance(EPD_CONTRAST_BOOST)
-    return img.getpixel((0, 0))
 
 def clear_screen():
     print("Clear screen")
@@ -246,8 +267,11 @@ def get_theme(cover_path):
         else:
             return (l2+0.05)/(l1+0.05)
 
+    def epd_luminance(color):
+        return luminance(epd_perceived_color(color))
+
     #print("p", p)
-    l = list(map(luminance, p))
+    l = list(map(epd_luminance, p))
     #print("l", l)
     cr01 = contrast_ratio(l[0], l[1])
     cr02 = contrast_ratio(l[0], l[2])
@@ -273,7 +297,7 @@ def get_theme(cover_path):
     else:
         # likely incorrect if p[0] is near the mid point
         bg = (255-p[0][0], 255-p[0][1], 255-p[0][2])
-        cr = contrast_ratio(l[0], luminance(bg))
+        cr = contrast_ratio(l[0], epd_luminance(bg))
         # if the contrast isn't high enough just go with white / black
         if cr < cr_aa_threshold:
             if l[0] < 0.5:
@@ -286,7 +310,7 @@ def get_theme(cover_path):
     #print(f"bg  {bg}")
     #print(f"fg  {fg}")
     #print(f"fg2 {fg2}")
-    return enhance_color(bg), enhance_color(fg), enhance_color(fg2)
+    return bg, fg, fg2
 
 def draw_now_playing():
     #print(f"Draw now playing {track_name}")
