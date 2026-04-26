@@ -521,7 +521,7 @@ elif player_event in ('seeked', 'position_correction', 'playing', 'paused'):
     track_id = os.environ['TRACK_ID']
     position_ms = os.environ['POSITION_MS']
     if player_event == 'playing':
-        print(player_event)
+        print(f"{player_event} {track_id}")
         write_heartbeat()
     elif player_event == 'paused':  # paused seems to be what's received at end of playback
         print(player_event)
@@ -531,7 +531,7 @@ elif player_event in ('seeked', 'position_correction', 'playing', 'paused'):
 elif player_event in ('unavailable', 'end_of_track', 'preload_next', 'preloading', 'loading', 'stopped'):
     track_id = os.environ['TRACK_ID']
     if player_event == 'stopped':  # when librespot stops. not sure if that ever happens
-        print(player_event)
+        print(f"{player_event} {track_id}")
         remove_heartbeat()
         display_idle_art()
 
@@ -548,7 +548,6 @@ elif player_event == 'sink':
     sink_status = os.environ['SINK_STATUS']
 
 elif player_event == 'track_changed':
-    print(player_event)
     write_heartbeat()
     item_type = os.environ['ITEM_TYPE']
     track_id = os.environ['TRACK_ID']
@@ -558,6 +557,8 @@ elif player_event == 'track_changed':
     is_explicit = os.environ['IS_EXPLICIT']
     language = os.environ['LANGUAGE'].split('\n')
     covers = os.environ['COVERS'].split('\n')
+
+    print(f"{player_event} {track_id} {track_name}")
 
     if item_type == 'Track':
         track_number = os.environ['NUMBER']
