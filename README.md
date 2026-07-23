@@ -20,10 +20,10 @@ python3 -m venv ~/venv
 source ~/venv/bin/activate
 
 pip install -r requirements.txt
-
-# Optional: omni-epd (only needed for non-Waveshare displays, not on PyPI)
-# pip install "git+https://github.com/robweber/omni-epd.git"
 ```
+
+This includes omni-epd, the fallback driver for non-Waveshare displays; comment
+it out in `requirements.txt` if you only use the Waveshare driver.
 
 Note: on Raspberry Pi OS, `/tmp` is a small tmpfs that can't hold the WaveShare
 e-Paper repo clone; if the install fails with "unable to write file", use

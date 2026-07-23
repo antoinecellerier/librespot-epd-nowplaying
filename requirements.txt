@@ -11,6 +11,7 @@ gpiozero
 lgpio
 spidev
 
-# Optional: omni-epd, only needed for non-Waveshare displays (EPD_DRIVER env
-# var). Not on PyPI — install from git (or a local checkout):
-# pip install "git+https://github.com/robweber/omni-epd.git"
+# Fallback driver abstraction, only exercised for non-Waveshare displays
+# (EPD_DRIVER env var). Not on PyPI, so installed from git. Comment out for a
+# lighter install on Waveshare-only setups.
+omni-epd @ git+https://github.com/robweber/omni-epd.git
