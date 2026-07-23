@@ -19,15 +19,19 @@ Create a virtual environment and install dependencies:
 python3 -m venv ~/venv
 source ~/venv/bin/activate
 
-# Core dependencies
-pip install pillow colorthief
+pip install -r requirements.txt
 
-# WaveShare e-paper driver (for Raspberry Pi)
-pip install "git+https://github.com/waveshareteam/e-Paper.git#subdirectory=RaspberryPi_JetsonNano/python"
-
-# Optional: omni-epd (only needed for non-Waveshare displays)
-# pip install omni-epd
+# Optional: omni-epd (only needed for non-Waveshare displays, not on PyPI)
+# pip install "git+https://github.com/robweber/omni-epd.git"
 ```
+
+Note: on Raspberry Pi OS, `/tmp` is a small tmpfs that can't hold the WaveShare
+e-Paper repo clone; if the install fails with "unable to write file", use
+`mkdir -p ~/tmp && TMPDIR=~/tmp pip install -r requirements.txt`.
+
+After an OS upgrade that bumps the Python minor version, the venv's installed
+packages are orphaned (they live in `lib/python3.X/site-packages`). Recreate
+with `python3 -m venv --upgrade ~/venv` and rerun the `pip install` above.
 
 ### System dependencies
 

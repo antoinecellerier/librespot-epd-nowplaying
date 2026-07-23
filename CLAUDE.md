@@ -72,6 +72,8 @@ Recommended cron jobs on pizero:
 
 ## Dependencies
 
+Installable via `pip install -r requirements.txt` (see README.md for Pi-specific caveats: small `/tmp` tmpfs, venv breakage after Python minor version upgrades).
+
 - waveshare-epd: Waveshare e-paper display driver (used directly for faster imports, ~0.8s vs ~1.4s)
 - omni-epd (optional): Fallback display abstraction for non-Waveshare displays. Set `EPD_DRIVER` env var to an omni-epd driver name (e.g. `inky.impression`) to use it.
 - PIL/Pillow: Image creation and manipulation

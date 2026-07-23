@@ -1,0 +1,16 @@
+# Core dependencies
+pillow
+colorthief
+
+# WaveShare e-paper driver and its runtime deps (for Raspberry Pi).
+# Note: the e-Paper repo checkout is large; if /tmp is a small tmpfs (default
+# on Raspberry Pi OS), point pip's temp dir at the SD card:
+#   mkdir -p ~/tmp && TMPDIR=~/tmp pip install -r requirements.txt
+waveshare-epd @ git+https://github.com/waveshareteam/e-Paper.git#subdirectory=RaspberryPi_JetsonNano/python
+gpiozero
+lgpio
+spidev
+
+# Optional: omni-epd, only needed for non-Waveshare displays (EPD_DRIVER env
+# var). Not on PyPI — install from git (or a local checkout):
+# pip install "git+https://github.com/robweber/omni-epd.git"
