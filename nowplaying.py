@@ -10,7 +10,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 import urllib.request
 
-from PIL import Image, ImageDraw, ImageEnhance, ImageFont
+from PIL import Image, ImageDraw, ImageEnhance, ImageFont, ImageStat
 from colorthief import ColorThief
 
 # Use waveshare_epd directly for faster imports (~0.8s vs ~1.4s with omni-epd).
@@ -105,12 +105,8 @@ def epd_perceived_color(rgb):
     swatch = Image.new("RGB", (64, 64), rgb)
     quantized = swatch.quantize(colors=len(EPD_PALETTE), palette=_palette_image, dither=Image.Dither.FLOYDSTEINBERG)
     rgb_result = quantized.convert("RGB")
-    pixels = list(rgb_result.getdata())
-    n = len(pixels)
-    r = sum(p[0] for p in pixels) // n
-    g = sum(p[1] for p in pixels) // n
-    b = sum(p[2] for p in pixels) // n
-    return (r, g, b)
+    r, g, b = ImageStat.Stat(rgb_result).mean
+    return (int(r), int(g), int(b))
 
 
 def enhance_for_epd(image):
